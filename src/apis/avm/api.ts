@@ -302,6 +302,8 @@ export class AVMAPI extends JRPCAPI {
    *
    * @param username The user paying the transaction fee (in $AVAX) for asset creation
    * @param password The password for the user paying the transaction fee (in $AVAX) for asset creation
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param name The human-readable name for the asset
    * @param symbol Optional. The shorthand symbol for the asset. Between 0 and 4 characters
    * @param denomination Optional. Determines how balances of this asset are displayed by user interfaces. Default is 0
@@ -323,10 +325,21 @@ export class AVMAPI extends JRPCAPI {
    *
    * @returns Returns a Promise<string> containing the base 58 string representation of the ID of the newly created asset.
    */
-  createFixedCapAsset = async (username:string, password:string, name:string, symbol:string, denomination:number, initialHolders:Array<object>):Promise<string> => {
+  createFixedCapAsset = async (
+    username:string, 
+    password:string, 
+    from:string[],
+    changeAddr:string,
+    name:string, 
+    symbol:string, 
+    denomination:number, 
+    initialHolders:Array<object>
+    ):Promise<string> => {
     const params:any = {
       name,
       symbol,
+      from,
+      changeAddr,
       denomination,
       username,
       password,
@@ -340,6 +353,8 @@ export class AVMAPI extends JRPCAPI {
      *
      * @param username The user paying the transaction fee (in $AVAX) for asset creation
      * @param password The password for the user paying the transaction fee (in $AVAX) for asset creation
+     * @param from A list of addresses to send funds from
+     * @param changeAddr The address change is sent to, if any
      * @param name The human-readable name for the asset
      * @param symbol Optional. The shorthand symbol for the asset -- between 0 and 4 characters
      * @param denomination Optional. Determines how balances of this asset are displayed by user interfaces. Default is 0
@@ -367,10 +382,21 @@ export class AVMAPI extends JRPCAPI {
      *
      * @returns Returns a Promise<string> containing the base 58 string representation of the ID of the newly created asset.
      */
-  createVariableCapAsset = async (username:string, password:string, name:string, symbol:string, denomination:number, minterSets:Array<object>):Promise<string> => {
+  createVariableCapAsset = async (
+    username:string, 
+    password:string, 
+    from:string[],
+    changeAddr:string,
+    name:string, 
+    symbol:string, 
+    denomination:number, 
+    minterSets:Array<object>
+    ):Promise<string> => {
     const params:any = {
       name,
       symbol,
+      from,
+      changeAddr,
       denomination,
       username,
       password,
@@ -380,8 +406,66 @@ export class AVMAPI extends JRPCAPI {
   };
 
   /**
+     * Create a new variable-cap, fungible asset. No units of the asset exist at initialization. Minters can mint units of this asset using createMintTx, signMintTx and sendMintTx.
+     *
+     * @param username The user paying the transaction fee (in $AVAX) for asset creation
+     * @param password The password for the user paying the transaction fee (in $AVAX) for asset creation
+     * @param from A list of addresses to send funds from
+     * @param changeAddr The address change is sent to, if any
+     * @param name The human-readable name for the asset
+     * @param symbol Optional. The shorthand symbol for the asset -- between 0 and 4 characters
+     * @param minterSets is a list where each element specifies that threshold of the addresses in minters may together mint more of the asset by signing a minting transaction
+     * 
+     * ```js
+     * Example minterSets:
+     * [
+     *      {
+     *          "minters":[
+     *              "X-avax1am4w6hfrvmh3akduzkjthrtgtqafalce6an8cr"
+     *          ],
+     *          "threshold": 1
+     *      },
+     *      {
+     *          "minters": [
+     *              "X-avax1am4w6hfrvmh3akduzkjthrtgtqafalce6an8cr",
+     *              "X-avax1kj06lhgx84h39snsljcey3tpc046ze68mek3g5",
+     *              "X-avax1yell3e4nln0m39cfpdhgqprsd87jkh4qnakklx"
+     *          ],
+     *          "threshold": 2
+     *      }
+     * ]
+     * ```
+     *
+     * @returns Returns a Promise<string> containing the base 58 string representation of the ID of the newly created asset.
+     */
+    createNFTAsset = async (
+      username:string, 
+      password:string, 
+      from:string[],
+      changeAddr:string,
+      name:string, 
+      symbol:string, 
+      minterSets:Array<object>
+      ):Promise<string> => {
+      const params:any = {
+        name,
+        symbol,
+        from,
+        changeAddr,
+        username,
+        password,
+        minterSets,
+      };
+      return this.callMethod('avm.createNFTAsset', params).then((response:RequestResponseData) => response.data.result.assetID);
+    };
+
+  /**
      * Create an unsigned transaction to mint more of an asset.
      *
+     * @param username The user paying the transaction fee (in $AVAX) for asset creation
+     * @param password The password for the user paying the transaction fee (in $AVAX) for asset creation
+     * @param from A list of addresses to send funds from
+     * @param changeAddr The address change is sent to, if any
      * @param amount The units of the asset to mint
      * @param assetID The ID of the asset to mint
      * @param to The address to assign the units of the minted asset
@@ -389,7 +473,16 @@ export class AVMAPI extends JRPCAPI {
      *
      * @returns Returns a Promise<string> containing the base 58 string representation of the unsigned transaction.
      */
-  mint = async (username:string, password:string, amount:number | BN, assetID:Buffer | string, to:string, minters:Array<string>):Promise<string> => {
+  mint = async (
+    username:string, 
+    password:string, 
+    from:string[], 
+    changeAddr:string, 
+    amount:number | BN, 
+    assetID:Buffer | string, 
+    to:string, 
+    minters:Array<string>
+    ):Promise<string> => {
     let asset:string;
     let amnt:BN;
     if (typeof assetID !== 'string') {
@@ -405,6 +498,8 @@ export class AVMAPI extends JRPCAPI {
     const params:any = {
       username: username,
       password: password,
+      from,
+      changeAddr,
       amount: amnt.toString(10),
       assetID: asset,
       to,
@@ -412,6 +507,51 @@ export class AVMAPI extends JRPCAPI {
     };
     return this.callMethod('avm.mint', params).then((response:RequestResponseData) => response.data.result.txID);
   };
+
+    /**
+     * Mint an NFT using MintNFT transaction.
+     *
+     * @param username The user paying the transaction fee (in $AVAX) for asset creation
+     * @param password The password for the user paying the transaction fee (in $AVAX) for asset creation
+     * @param from A list of addresses to send funds from
+     * @param changeAddr The address change is sent to, if any
+     * @param payload An arbitrary payload of up to 1024 bytes. Its encoding format is specified by the encoding argument.
+     * @param assetID The ID of the asset to mint
+     * @param to The address to assign the units of the minted asset
+     * @param encoding The encoding format to use for the payload argument. Can be either “cb58” or “hex”. Defaults to “cb58”.
+     *
+     * @returns Returns a Promise<string> containing the base 58 string representation of the unsigned transaction.
+     */
+    mintNFT = async (
+      username:string, 
+      password:string, 
+      from:string[], 
+      changeAddr:string, 
+      assetID:Buffer | string, 
+      payload:string,
+      to:string, 
+      encoding:string
+      ):Promise<{txID: string, changeAddr: string}> => {
+      
+      let asset:string;
+      if (typeof assetID !== 'string') {
+        asset = bintools.cb58Encode(assetID);
+      } else {
+        asset = assetID;
+      }
+
+      const params:any = {
+        username,
+        password,
+        from,
+        changeAddr,
+        assetID: asset,
+        payload,
+        to,
+        encoding
+      };
+      return this.callMethod('avm.mintNFT', params).then((response:RequestResponseData) => response.data.result);
+    };
 
   /**
      * Exports the private key for an address.
@@ -460,18 +600,22 @@ export class AVMAPI extends JRPCAPI {
     *
     * @param username The Keystore user that controls the P-Chain or C-Chain account specified in `to`
     * @param password The password of the Keystore user
+    * @param from A list of addresses to send funds from
+    * @param changeAddr The address change is sent to, if any
     * @param to The account on the P-Chain or C-Chain to send the asset to. 
     * @param amount Amount of asset to export as a {@link https://github.com/indutny/bn.js/|BN}
     * @param assetID The asset id which is being sent
     *
     * @returns String representing the transaction id
     */
-  export = async (username: string, password: string, to: string, amount: BN, assetID: string):Promise<string> => {
+  export = async (username: string, password: string, from: string[], changeAddr:string, to: string, amount: BN, assetID: string):Promise<string> => {
     const params: any = {
       to,
       amount: amount.toString(10),
       username,
       password,
+      from, 
+      changeAddr,
       assetID
     };
     return this.callMethod('avm.export', params).then((response: RequestResponseData) => response.data.result.txID);
@@ -484,15 +628,19 @@ export class AVMAPI extends JRPCAPI {
      *
      * @param username The Keystore user that controls the P-Chain account specified in `to`
      * @param password The password of the Keystore user
+     * @param from A list of addresses to send funds from
+     * @param changeAddr The address change is sent to, if any
      * @param to The account on the P-Chain or C-Chain to send the AVAX to.
      * @param amount Amount of AVAX to export as a {@link https://github.com/indutny/bn.js/|BN}
      *
      * @returns String representing the transaction id
      */
-  exportAVAX = async (username:string, password:string, to:string, amount:BN):Promise<string> => {
+  exportAVAX = async (username:string, password:string, from: string[], changeAddr:string, to:string, amount:BN):Promise<string> => {
     const params:any = {
       to,
       amount: amount.toString(10),
+      from,
+      changeAddr,
       username,
       password,
     };
@@ -553,7 +701,7 @@ export class AVMAPI extends JRPCAPI {
      *
      * @returns Promise of an array of address strings in the format specified by the blockchain.
      */
-  listAddresses = async (username:string, password:string): Promise<Array<string>> => {
+  listAddresses = async (username:string, password:string): Promise<string[]> => {
     const params:any = {
       username,
       password,
@@ -568,7 +716,7 @@ export class AVMAPI extends JRPCAPI {
      *
      * @returns Promise of an object mapping assetID strings with {@link https://github.com/indutny/bn.js/|BN} balance for the address on the blockchain.
      */
-  getAllBalances = async (address:string):Promise<Array<object>> => {
+  getAllBalances = async (address:string):Promise<object[]> => {
     if (typeof this.parseAddress(address) === 'undefined') {
       /* istanbul ignore next */
       throw new Error(`Error - AVMAPI.getAllBalances: Invalid address format ${address}`);
@@ -608,12 +756,14 @@ export class AVMAPI extends JRPCAPI {
    * Returns the treansaction data of a provided transaction ID by calling the node's `getTx` method.
    *
    * @param txid The string representation of the transaction ID
+   * @param encoding Defines the encoding format used for the retrieved tx. Can be either "cb58" or "hex"
    *
    * @returns Returns a Promise<string> containing the bytes retrieved from the node
    */
-  getTx = async (txid:string):Promise<string> => {
+  getTx = async (txid:string, encoding:string):Promise<string> => {
     const params:any = {
       txID: txid,
+      encoding
     };
     return this.callMethod('avm.getTx', params).then((response:RequestResponseData) => response.data.result.tx);
   };
@@ -641,18 +791,18 @@ export class AVMAPI extends JRPCAPI {
    * @param startIndex Optional. [StartIndex] defines where to start fetching UTXOs (for pagination.)
    * UTXOs fetched are from addresses equal to or greater than [StartIndex.Address]
    * For address [StartIndex.Address], only UTXOs with IDs greater than [StartIndex.Utxo] will be returned.
-   * @param persistOpts Options available to persist these UTXOs in local storage
+   * @param encoding Defines the encoding format used for the retrieved utxos. Can be either "cb58" or "hex"
    *
    * @remarks
    * persistOpts is optional and must be of type [[PersistanceOptions]]
    *
    */
   getUTXOs = async (
-    addresses:Array<string> | string,
+    addresses:string[] | string,
     sourceChain:string = undefined,
     limit:number = 0,
     startIndex:{address:string, utxo:string} = undefined,
-    persistOpts:PersistanceOptions = undefined
+    encoding:string
   ):Promise<{
     numFetched:number,
     utxos:UTXOSet,
@@ -665,7 +815,8 @@ export class AVMAPI extends JRPCAPI {
 
     const params:any = {
       addresses: addresses,
-      limit
+      limit,
+      encoding
     };
     if(typeof startIndex !== "undefined" && startIndex) {
       params.startIndex = startIndex;
@@ -679,19 +830,6 @@ export class AVMAPI extends JRPCAPI {
 
       const utxos:UTXOSet = new UTXOSet();
       let data = response.data.result.utxos;
-      if (persistOpts && typeof persistOpts === 'object') {
-        if (this.db.has(persistOpts.getName())) {
-          const selfArray:Array<string> = this.db.get(persistOpts.getName());
-          if (Array.isArray(selfArray)) {
-            utxos.addArray(data);
-            const self:UTXOSet = new UTXOSet();
-            self.addArray(selfArray);
-            self.mergeByRule(utxos, persistOpts.getMergeRule());
-            data = self.getAllUTXOStrings();
-          }
-        }
-        this.db.set(persistOpts.getName(), data, persistOpts.getOverwrite());
-      }
       utxos.addArray(data, false);
       response.data.result.utxos = utxos;
       return response.data.result;
@@ -877,7 +1015,7 @@ export class AVMAPI extends JRPCAPI {
     throw new Error("Error - AVMAPI.buildImportTx: Invalid destinationChain type: " + (typeof sourceChain) );
   }
   
-  const atomicUTXOs:UTXOSet = await (await this.getUTXOs(ownerAddresses, srcChain, 0, undefined)).utxos;
+  const atomicUTXOs:UTXOSet = await (await this.getUTXOs(ownerAddresses, srcChain, 0, undefined, 'cb58')).utxos;
   const avaxAssetID:Buffer = await this.getAVAXAssetID();
 
   const atomics = atomicUTXOs.getAllUTXOs();
@@ -1271,10 +1409,11 @@ export class AVMAPI extends JRPCAPI {
    * Calls the node's issueTx method from the API and returns the resulting transaction ID as a string.
    *
    * @param tx A string, {@link https://github.com/feross/buffer|Buffer}, or [[Tx]] representing a transaction
+   * @param encoding Defines the encoding format used in the tx. Can be either "cb58" or "hex"
    *
    * @returns A Promise<string> representing the transaction ID of the posted transaction.
    */
-  issueTx = async (tx:string | Buffer | Tx):Promise<string> => {
+  issueTx = async (tx:string | Buffer | Tx, encoding:string):Promise<string> => {
     let Transaction = '';
     if (typeof tx === 'string') {
       Transaction = tx;
@@ -1290,6 +1429,7 @@ export class AVMAPI extends JRPCAPI {
     }
     const params:any = {
       tx: Transaction.toString(),
+      encoding
     };
     return this.callMethod('avm.issueTx', params).then((response:RequestResponseData) => response.data.result.txID);
   };
@@ -1374,7 +1514,7 @@ export class AVMAPI extends JRPCAPI {
    */
   sendMultiple = async (username:string, password:string, 
       sendOutputs:Array<{assetID:string | Buffer, amount:number | BN, to:string}>, 
-      from:Array<string> | Array<Buffer> = undefined, 
+      from:string[] | Buffer[] = undefined, 
       changeAddr:string = undefined, 
       memo:string | Buffer = undefined
     ):Promise<{txID: string, changeAddr: string}> => {
@@ -1428,6 +1568,65 @@ export class AVMAPI extends JRPCAPI {
     }
     
     return this.callMethod('avm.sendMultiple', params).then((response:RequestResponseData) => response.data.result);
+  };
+
+  /**
+   * Sends an NFT to the specified address from a list of owned of addresses.
+   *
+   * @param username The user that owns the private keys associated with the `from` addresses
+   * @param password The password unlocking the user
+   * @param assetID The assetID of the asset to send
+   * @param groupID ID representing the NFT to transfer
+   * @param to The address of the recipient
+   * @param from Optional. An array of addresses managed by the node's keystore for this blockchain which will fund this transaction
+   * @param changeAddr Optional. An address to send the change
+   *
+   * @returns Promise for the tuple of the string representing the transaction's ID and the change address
+   */
+  sendNFT= async (
+    username:string, 
+    password:string, 
+    assetID:string | Buffer, 
+    groupID:BN,
+    to:string, 
+    from:Array<string> | Array<Buffer> = undefined, 
+    changeAddr:string = undefined 
+    ):Promise<{txID: string, changeAddr: string}> => {
+    let asset:string;
+    let amnt:BN;
+
+    if (typeof this.parseAddress(to) === 'undefined') {
+      /* istanbul ignore next */
+      throw new Error(`Error - AVMAPI.send: Invalid address format ${to}`);
+    }
+
+    if (typeof assetID !== 'string') {
+      asset = bintools.cb58Encode(assetID);
+    } else {
+      asset = assetID;
+    }
+    const params:any = {
+      username,
+      password,
+      assetID,
+      groupID,
+      to
+    };
+
+    from = this._cleanAddressArray(from, 'send');
+    if(typeof from !== "undefined"){
+      params["from"] = from;
+    }
+
+    if (typeof changeAddr !== 'undefined') {
+      if(typeof this.parseAddress(changeAddr) === 'undefined') {
+        /* istanbul ignore next */
+        throw new Error(`Error - AVMAPI.send: Invalid address format ${changeAddr}`);
+      }
+      params["changeAddr"] = changeAddr;
+    } 
+    
+    return this.callMethod('avm.sendNFT', params).then((response:RequestResponseData) => response.data.result);
   };
 
   /**

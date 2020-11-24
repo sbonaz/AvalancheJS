@@ -247,7 +247,7 @@ describe('AVMAPI', () => {
     let username = "Robert";
     let password = "Paulson";
     let txID = "valid";
-    let result:Promise<string> = api.export(username, password, to, amount, assetID);
+    let result:Promise<string> = api.export(username, password, [addrA], addrA, to, amount, assetID);
     let payload:object = {
         "result": {
             "txID": txID
@@ -270,7 +270,7 @@ describe('AVMAPI', () => {
     let username = "Robert";
     let password = "Paulson";
     let txID = "valid";
-    let result:Promise<string> = api.exportAVAX(username, password, to, amount);
+    let result:Promise<string> = api.exportAVAX(username, password, [addrA], addrA, to, amount);
     let payload:object = {
         "result": {
             "txID": txID
@@ -368,7 +368,7 @@ test("import", async ()=>{
       },
     ];
 
-    const result:Promise<string> = api.createFixedCapAsset(username, password, 'Some Coin', 'SCC', denomination, initialHolders);
+    const result:Promise<string> = api.createFixedCapAsset(username, password, [addrA], addrA, 'Some Coin', 'SCC', denomination, initialHolders);
     const payload:object = {
       result: {
         assetID: assetid,
@@ -408,7 +408,7 @@ test("import", async ()=>{
       },
     ];
 
-    const result:Promise<string> = api.createVariableCapAsset(username, password, 'Some Coin', 'SCC', denomination, minterSets);
+    const result:Promise<string> = api.createVariableCapAsset(username, password, [addrA], addrA, 'Some Coin', 'SCC', denomination, minterSets);
     const payload:object = {
       result: {
         assetID: assetid,
@@ -436,7 +436,7 @@ test("import", async ()=>{
       '2fE6iibqfERz5wenXE6qyvinsxDvFhHZk',
       '7ieAJbfrGQbpNZRAQEpZCC1Gs1z5gz4HU',
     ];
-    const result:Promise<string> = api.mint(username, password, amount, assetID, to, minters);
+    const result:Promise<string> = api.mint(username, password, [addrA], addrA, amount, assetID, to, minters);
     const payload:object = {
       result: {
         txID: 'sometx',
@@ -464,7 +464,7 @@ test("import", async ()=>{
       '2fE6iibqfERz5wenXE6qyvinsxDvFhHZk',
       '7ieAJbfrGQbpNZRAQEpZCC1Gs1z5gz4HU',
     ];
-    const result:Promise<string> = api.mint(username, password, amount, assetID, to, minters);
+    const result:Promise<string> = api.mint(username, password, [addrA], addrA, amount, assetID, to, minters);
     const payload:object = {
       result: {
         txID: 'sometx',
@@ -484,7 +484,7 @@ test("import", async ()=>{
   test('getTx', async () => {
     const txid:string = 'f966750f438867c3c9828ddcdbe660e21ccdbb36a9276958f011ba472f75d4e7';
 
-    const result:Promise<string> = api.getTx(txid);
+    const result:Promise<string> = api.getTx(txid, 'hex');
     const payload:object = {
       result: {
         tx: 'sometx',
@@ -593,7 +593,7 @@ test("import", async ()=>{
       numFetched:number,
       utxos:UTXOSet,
       endIndex:{address:string, utxo:string}
-    }> = api.getUTXOs(addresses, api.getBlockchainID(), 0, undefined, persistOpts);
+    }> = api.getUTXOs(addresses, api.getBlockchainID(), 0, undefined, 'cb58');
     const payload:object = {
       result: {
         numFetched:3,
@@ -609,15 +609,6 @@ test("import", async ()=>{
     let response:UTXOSet = (await result).utxos;
 
     expect(mockAxios.request).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(response.getAllUTXOStrings().sort())).toBe(JSON.stringify(set.getAllUTXOStrings().sort()));
-
-    addresses = set.getAddresses().map((a) => api.addressFromBuffer(a));
-    result = api.getUTXOs(addresses, api.getBlockchainID(), 0, undefined, persistOpts);
-
-    mockAxios.mockResponse(responseObj);
-    response = (await result).utxos;
-
-    expect(mockAxios.request).toHaveBeenCalledTimes(2);
     expect(JSON.stringify(response.getAllUTXOStrings().sort())).toBe(JSON.stringify(set.getAllUTXOStrings().sort()));
   });
 
@@ -941,7 +932,7 @@ test("import", async ()=>{
       const tx = avm.signTx(txu);
       const txid:string = 'f966750f438867c3c9828ddcdbe660e21ccdbb36a9276958f011ba472f75d4e7';
 
-      const result:Promise<string> = avm.issueTx(tx.toString());
+      const result:Promise<string> = avm.issueTx(tx.toString(), 'hex');
       const payload:object = {
         result: {
           txID: txid,
@@ -961,7 +952,7 @@ test("import", async ()=>{
       const tx = avm.signTx(txu);
 
       const txid:string = 'f966750f438867c3c9828ddcdbe660e21ccdbb36a9276958f011ba472f75d4e7';
-      const result:Promise<string> = avm.issueTx(tx.toBuffer());
+      const result:Promise<string> = avm.issueTx(tx.toBuffer(), 'hex');
       const payload:object = {
         result: {
           txID: txid,
@@ -982,7 +973,7 @@ test("import", async ()=>{
 
       const txid:string = 'f966750f438867c3c9828ddcdbe660e21ccdbb36a9276958f011ba472f75d4e7';
 
-      const result:Promise<string> = avm.issueTx(tx);
+      const result:Promise<string> = avm.issueTx(tx, 'hex');
       const payload:object = {
         result: {
           txID: txid,
