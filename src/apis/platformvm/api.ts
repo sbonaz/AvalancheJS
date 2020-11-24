@@ -132,7 +132,7 @@ export class PlatformVMAPI extends JRPCAPI {
    */
   getAVAXAssetID = async (refresh:boolean = false):Promise<Buffer> => {
     if (typeof this.AVAXAssetID === 'undefined' || refresh) {
-      const assetID:string = await this.getStakingAssetID();
+      const assetID:string = await this.getStakingAssetID("0");
       this.AVAXAssetID = bintools.cb58Decode(assetID);
     }
     return this.AVAXAssetID;
@@ -257,11 +257,19 @@ export class PlatformVMAPI extends JRPCAPI {
 
   /**
    * Retrieves an assetID for a subnet's staking assset.
+   * 
+   * @param subnetID Either a {@link https://github.com/feross/buffer|Buffer} or an
+   * cb58 serialized string for the SubnetID or its alias.
    *
    * @returns Returns a Promise<string> with cb58 encoded value of the assetID.
    */
-  getStakingAssetID = async ():Promise<string> => {
+  getStakingAssetID = async (subnetID: string):Promise<string> => {
     const params:any = {};
+    if (typeof subnetID === 'string') {
+      params.subnetID = subnetID;
+    } else {
+      params.subnetID = bintools.cb58Encode(subnetID);
+    }
     return this.callMethod('platform.getStakingAssetID', params).then((response:RequestResponseData) => (response.data.result.assetID));
   };
 
@@ -270,6 +278,8 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The username of the Keystore user that controls the new account
    * @param password The password of the Keystore user that controls the new account
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param subnetID Optional. Either a {@link https://github.com/feross/buffer|Buffer} or an cb58 serialized string for the SubnetID or its alias.
    * @param vmID The ID of the Virtual Machine the blockchain runs. Can also be an alias of the Virtual Machine.
    * @param FXIDs The ids of the FXs the VM is running.
@@ -281,9 +291,11 @@ export class PlatformVMAPI extends JRPCAPI {
   createBlockchain = async (
     username: string,
     password:string,
+    from:string[],
+    changeAddr:string,
     subnetID:Buffer | string = undefined,
     vmID:string,
-    fxIDs: Array<number>,
+    fxIDs: number[],
     name:string,
     genesis:string,
     )
@@ -291,6 +303,8 @@ export class PlatformVMAPI extends JRPCAPI {
     const params:any = {
       username, 
       password,
+      from,
+      changeAddr,
       fxIDs,
       vmID,
       name,
@@ -367,7 +381,7 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @returns Promise for an array of addresses.
    */
-  listAddresses = async (username: string, password:string):Promise<Array<string>> => {
+  listAddresses = async (username: string, password:string):Promise<string[]> => {
     const params:any = {
       username,
       password,
@@ -400,7 +414,8 @@ export class PlatformVMAPI extends JRPCAPI {
    * Lists the set of pending validators.
    *
    * @param subnetID Optional. Either a {@link https://github.com/feross/buffer|Buffer}
-   * or a cb58 serialized string for the SubnetID or its alias.
+   * or a cb58 serialized string for the SubnetID or its alias. Defaults to primary 
+   * network if ommitted.
    *
    * @returns Promise for an array of validators that are pending staking, see: {@link https://docs.avax.network/v1.0/en/api/platform/#platformgetpendingvalidators|platform.getPendingValidators documentation}.
    *
@@ -446,11 +461,13 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The username of the Keystore user
    * @param password The password of the Keystore user
-   * @param nodeID The node ID of the validator
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param startTime Javascript Date object for the start time to validate
    * @param endTime Javascript Date object for the end time to validate
    * @param stakeAmount The amount of nAVAX the validator is staking as
    * a {@link https://github.com/indutny/bn.js/|BN}
+   * @param nodeID The node ID of the validator
    * @param rewardAddress The address the validator reward will go to, if there is one.
    * @param delegationFeeRate Optional. A {@link https://github.com/indutny/bn.js/|BN} for the percent fee this validator 
    * charges when others delegate stake to them. Up to 4 decimal places allowed; additional decimal places are ignored. 
@@ -463,20 +480,24 @@ export class PlatformVMAPI extends JRPCAPI {
   addValidator = async (
     username:string,
     password:string,
-    nodeID:string,
+    from:string[],
+    changeAddr:string,
     startTime:Date,
     endTime:Date,
     stakeAmount:BN,
+    nodeID:string,
     rewardAddress:string,
     delegationFeeRate:BN = undefined
   ):Promise<string> => {
     const params:any = {
       username,
       password,
-      nodeID,
+      from,
+      changeAddr,
       startTime: startTime.getTime() / 1000,
       endTime: endTime.getTime() / 1000,
       stakeAmount: stakeAmount.toString(10),
+      nodeID,
       rewardAddress,
     };
     if (typeof delegationFeeRate !== 'undefined') {
@@ -491,6 +512,8 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The username of the Keystore user
    * @param password The password of the Keystore user
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param nodeID The node ID of the validator
    * @param subnetID Either a {@link https://github.com/feross/buffer|Buffer} or a cb58 serialized string for the SubnetID or its alias.
    * @param startTime Javascript Date object for the start time to validate
@@ -502,6 +525,8 @@ export class PlatformVMAPI extends JRPCAPI {
   addSubnetValidator = async (
     username:string,
     password:string,
+    from:string[],
+    changeAddr:string,
     nodeID:string,
     subnetID:Buffer | string,
     startTime:Date,
@@ -512,6 +537,8 @@ export class PlatformVMAPI extends JRPCAPI {
     const params:any = {
       username,
       password,
+      from,
+      changeAddr,
       nodeID,
       startTime: startTime.getTime() / 1000,
       endTime: endTime.getTime() / 1000,
@@ -531,6 +558,8 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The username of the Keystore user
    * @param password The password of the Keystore user
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param nodeID The node ID of the delegatee
    * @param startTime Javascript Date object for when the delegator starts delegating
    * @param endTime Javascript Date object for when the delegator starts delegating
@@ -544,6 +573,8 @@ export class PlatformVMAPI extends JRPCAPI {
   addDelegator = async (
     username:string,
     password:string,
+    from:string[],
+    changeAddr:string,
     nodeID:string,
     startTime:Date,
     endTime:Date,
@@ -553,6 +584,8 @@ export class PlatformVMAPI extends JRPCAPI {
     const params:any = {
       username,
       password,
+      from,
+      changeAddr,
       nodeID,
       startTime: startTime.getTime() / 1000,
       endTime: endTime.getTime() / 1000,
@@ -569,6 +602,8 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The username of the Keystore user
    * @param password The password of the Keystore user
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param controlKeys Array of platform addresses as strings
    * @param threshold To add a validator to this Subnet, a transaction must have threshold
    * signatures, where each signature is from a key whose address is an element of `controlKeys`
@@ -578,6 +613,8 @@ export class PlatformVMAPI extends JRPCAPI {
   createSubnet = async (
     username: string, 
     password:string,
+    from:string[],
+    changeAddr:string,
     controlKeys:Array<string>, 
     threshold:number
   )
@@ -585,6 +622,8 @@ export class PlatformVMAPI extends JRPCAPI {
     const params:any = {
       username,
       password,
+      from,
+      changeAddr,
       controlKeys,
       threshold
     };
@@ -616,7 +655,7 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @returns Promise for an array of blockchainIDs the subnet validates.
    */
-  validates = async (subnetID:Buffer | string):Promise<Array<string>> => {
+  validates = async (subnetID:Buffer | string):Promise<string[]> => {
     const params:any = {
       subnetID,
     };
@@ -634,7 +673,7 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @returns Promise for an array of objects containing fields "id", "subnetID", and "vmID".
    */
-  getBlockchains = async ():Promise<Array<object>> => {
+  getBlockchains = async ():Promise<object[]> => {
     const params:any = {};
     return this.callMethod('platform.getBlockchains', params)
       .then((response:RequestResponseData) => response.data.result.blockchains);
@@ -648,16 +687,20 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The Keystore user that controls the account specified in `to`
    * @param password The password of the Keystore user
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param to The address on the X-Chain to send the AVAX to. Do not include X- in the address
    * @param amount Amount of AVAX to export as a {@link https://github.com/indutny/bn.js/|BN}
    *
    * @returns Promise for an unsigned transaction to be signed by the account the the AVAX is
    * sent from and pays the transaction fee.
    */
-  exportAVAX = async (username: string, password:string, amount:BN, to:string,):Promise<string> => {
+  exportAVAX = async (username: string, password:string, from:string[], changeAddr:string, amount:BN, to:string):Promise<string> => {
     const params:any = {
       username,
       password,
+      from,
+      changeAddr,
       to,
       amount: amount.toString(10)
     };
@@ -673,6 +716,8 @@ export class PlatformVMAPI extends JRPCAPI {
    *
    * @param username The Keystore user that controls the account specified in `to`
    * @param password The password of the Keystore user
+   * @param from A list of addresses to send funds from
+   * @param changeAddr The address change is sent to, if any
    * @param to The ID of the account the AVAX is sent to. This must be the same as the to
    * argument in the corresponding call to the X-Chain’s exportAVAX
    * @param sourceChain The chainID where the funds are coming from.
@@ -680,13 +725,15 @@ export class PlatformVMAPI extends JRPCAPI {
    * @returns Promise for a string for the transaction, which should be sent to the network
    * by calling issueTx.
    */
-  importAVAX = async (username: string, password:string, to:string, sourceChain:string)
+  importAVAX = async (username: string, password:string, from:string[], changeAddr:string, to:string, sourceChain:string)
   :Promise<string> => {
     const params:any = {
       to,
       sourceChain,
       username,
       password,
+      from,
+      changeAddr,
     };
     return this.callMethod('platform.importAVAX', params)
       .then((response:RequestResponseData) => response.data.result.txID);
@@ -696,10 +743,11 @@ export class PlatformVMAPI extends JRPCAPI {
    * Calls the node's issueTx method from the API and returns the resulting transaction ID as a string.
    *
    * @param tx A string, {@link https://github.com/feross/buffer|Buffer}, or [[Tx]] representing a transaction
+   * @param encoding Defines the encoding format to use for the tx. Can be either "cb58" or "hex"
    *
    * @returns A Promise<string> representing the transaction ID of the posted transaction.
    */
-  issueTx = async (tx:string | Buffer | Tx):Promise<string> => {
+  issueTx = async (tx:string | Buffer | Tx, encoding:string):Promise<string> => {
     let Transaction = '';
     if (typeof tx === 'string') {
       Transaction = tx;
@@ -715,6 +763,7 @@ export class PlatformVMAPI extends JRPCAPI {
     }
     const params:any = {
       tx: Transaction.toString(),
+      encoding
     };
     return this.callMethod('platform.issueTx', params).then((response:RequestResponseData) => response.data.result.txID);
   };
@@ -762,6 +811,45 @@ export class PlatformVMAPI extends JRPCAPI {
   }
 
   /**
+   * Gets the total amount staked on the primary network.
+   */
+  getTotalStake = async ():Promise<BN> => {
+    const params:any = {};
+    return this.callMethod('platform.getTotalStake', params)
+      .then((response:RequestResponseData) => new BN(response.data.result.stake, 10));
+  }
+
+  /**
+   * Get the maximum amount of AVAX staking to the named node during the time period.
+   *
+   * @param subnetID Either a {@link https://github.com/feross/buffer|Buffer} or an AVAX
+   * serialized string for the SubnetID or its alias
+   * @param nodeID The node to which AVAX is staked
+   * @param startTime Javascript Date object for the start of the staking period
+   * @param endTime Javascript Date object for the end of the staking period
+   */
+  getMaxStakeAmount = async (
+    subnetID:Buffer | string,
+    nodeID:string,
+    startTime:Date,
+    endTime:Date,
+    ):Promise<BN> => {
+    const params:any = {
+      subnetID,
+      nodeID,
+      startTime: startTime.getTime() / 1000,
+      endTime: endTime.getTime() / 1000,
+    };
+    if (typeof subnetID === 'string') {
+      params.subnetID = subnetID;
+    } else if (typeof subnetID !== 'undefined') {
+      params.subnetID = bintools.cb58Encode(subnetID);
+    }
+    return this.callMethod('platform.getMaxStakeAmount', params)
+      .then((response:RequestResponseData) => new BN(response.data.result.amount, 10));
+  };
+
+  /**
    * Sets the minimum stake cached in this class.
    * @param minValidatorStake A {@link https://github.com/indutny/bn.js/|BN} to set the minimum stake amount cached in this class.
    * @param minDelegatorStake A {@link https://github.com/indutny/bn.js/|BN} to set the minimum delegation amount cached in this class.
@@ -778,7 +866,7 @@ export class PlatformVMAPI extends JRPCAPI {
   /**
    * Gets the total amount staked for an array of addresses.
    */
-  getStake = async (addresses:Array<string>):Promise<BN> => {
+  getStake = async (addresses:string[]):Promise<BN> => {
     const params:any = {
       addresses
     };
@@ -794,7 +882,7 @@ export class PlatformVMAPI extends JRPCAPI {
    * @returns Promise for an array of objects containing fields "id",
    * "controlKeys", and "threshold".
    */
-  getSubnets = async (ids:Array<string> = undefined):Promise<Array<object>> => {
+  getSubnets = async (ids:string[] = undefined):Promise<object[]> => {
     const params:any = {};
     if(typeof ids !== undefined){
       params.ids = ids;
@@ -845,12 +933,14 @@ export class PlatformVMAPI extends JRPCAPI {
    * Returns the treansaction data of a provided transaction ID by calling the node's `getTx` method.
    *
    * @param txid The string representation of the transaction ID
+   * @param encoding Defines the encoding format to use for the returned transaction. Can be either "cb58" or "hex"
    *
    * @returns Returns a Promise<string> containing the bytes retrieved from the node
    */
-  getTx = async (txid:string):Promise<string> => {
+  getTx = async (txid:string, encoding:string):Promise<string> => {
     const params:any = {
       txID: txid,
+      encoding
     };
     return this.callMethod('platform.getTx', params).then((response:RequestResponseData) => response.data.result.tx);
   };
@@ -880,18 +970,18 @@ export class PlatformVMAPI extends JRPCAPI {
    * @param startIndex Optional. [StartIndex] defines where to start fetching UTXOs (for pagination.)
    * UTXOs fetched are from addresses equal to or greater than [StartIndex.Address]
    * For address [StartIndex.Address], only UTXOs with IDs greater than [StartIndex.Utxo] will be returned.
-   * @param persistOpts Options available to persist these UTXOs in local storage
+   * @param encoding Defines the encoding format to use for the returned UTXOs. Can be either "cb58" or "hex"
    *
    * @remarks
    * persistOpts is optional and must be of type [[PersistanceOptions]]
    *
    */
   getUTXOs = async (
-    addresses:Array<string> | string,
+    addresses:string[] | string,
     sourceChain:string = undefined,
     limit:number = 0,
     startIndex:{address:string, utxo:string} = undefined,
-    persistOpts:PersistanceOptions = undefined
+    encoding:string = "cb58"
   ):Promise<{
     numFetched:number,
     utxos:UTXOSet,
@@ -914,23 +1004,14 @@ export class PlatformVMAPI extends JRPCAPI {
       params.sourceChain = sourceChain;
     }
 
+    if(encoding.toLowerCase() === "cb58" || encoding.toLowerCase() === "hex") {
+      params.encoding = encoding.toLowerCase();
+    }
+
     return this.callMethod('platform.getUTXOs', params).then((response:RequestResponseData) => {
 
       const utxos:UTXOSet = new UTXOSet();
       let data = response.data.result.utxos;
-      if (persistOpts && typeof persistOpts === 'object') {
-        if (this.db.has(persistOpts.getName())) {
-          const selfArray:Array<string> = this.db.get(persistOpts.getName());
-          if (Array.isArray(selfArray)) {
-            utxos.addArray(data);
-            const self:UTXOSet = new UTXOSet();
-            self.addArray(selfArray);
-            self.mergeByRule(utxos, persistOpts.getMergeRule());
-            data = self.getAllUTXOStrings();
-          }
-        }
-        this.db.set(persistOpts.getName(), data, persistOpts.getOverwrite());
-      }
       utxos.addArray(data, false);
       response.data.result.utxos = utxos;
       return response.data.result;

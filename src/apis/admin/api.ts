@@ -41,7 +41,7 @@ export class AdminAPI extends JRPCAPI {
      * Give a blockchain an alias, a different name that can be used any place the blockchain’s
      * ID is used.
      *
-     * @param endpoint The blockchain’s ID
+     * @param chain The blockchain’s ID
      * @param alias Can now be used in place of the blockchain’s ID (in API endpoints, for example)
      *
      * @returns Returns a Promise<boolean> containing success, true for success, false for failure.
@@ -54,6 +54,33 @@ export class AdminAPI extends JRPCAPI {
     return this.callMethod('admin.aliasChain', params)
       .then((response:RequestResponseData) => response.data.result.success);
   };
+
+  /**
+     * Gets the aliases of the chain with the provided ID
+     *
+     * @param chainID The blockchain’s ID
+     *
+     * @returns Returns Promise<string[]> of all of the aliases of the provided chain
+     */
+    getChainAliases = async (chainID:string):Promise<string[]> => {
+      const params:any = {
+        chainID
+      };
+      return this.callMethod('admin.getChainAliases', params)
+        .then((response:RequestResponseData) => response.data.result.aliases);
+    };
+
+  /**
+     * Dumps the current global stacktrace
+     *
+     * @returns Returns a Promise<boolean> containing success, true for success, false for failure.
+     */
+    stacktrace = async ():Promise<boolean> => {
+      const params:any = {};
+      return this.callMethod('admin.stacktrace', params)
+        .then((response:RequestResponseData) => response.data.result.success);
+    };
+  
 
   /**
      * Dump the mutex statistics of the node to the specified file.
