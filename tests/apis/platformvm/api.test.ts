@@ -8,7 +8,6 @@ import BinTools from 'src/utils/bintools';
 import * as bech32 from 'bech32';
 import { Defaults, PlatformChainID } from 'src/utils/constants';
 import { UTXOSet } from 'src/apis/platformvm/utxos';
-import { PersistanceOptions } from 'src/utils/persistenceoptions';
 import { KeyChain } from 'src/apis/platformvm/keychain';
 import { SECPTransferOutput, TransferableOutput, AmountOutput, ParseableOutput, StakeableLockOut } from 'src/apis/platformvm/outputs';
 import { TransferableInput, SECPTransferInput, AmountInput } from 'src/apis/platformvm/inputs';
@@ -238,7 +237,7 @@ describe('PlatformVMAPI', () => {
     const endTime = new Date(1982, 3, 1, 12, 58, 33, 7);
     const weight = 13;
     const utx = 'valid';
-    const result:Promise<string> = api.addSubnetValidator(username, password, nodeID, subnetID, startTime, endTime, weight);
+    const result:Promise<string> = api.addSubnetValidator(username, password, [addrA], addrA, nodeID, subnetID, startTime, endTime, weight);
     const payload:object = {
       result: {
         txID: utx,
@@ -262,7 +261,7 @@ describe('PlatformVMAPI', () => {
     const endTime = new Date(1982, 3, 1, 12, 58, 33, 7);
     const weight = 13;
     const utx = 'valid';
-    const result:Promise<string> = api.addSubnetValidator(username, password, nodeID, subnetID, startTime, endTime, weight);
+    const result:Promise<string> = api.addSubnetValidator(username, password, [addrA], addrA, nodeID, subnetID, startTime, endTime, weight);
     const payload:object = {
       result: {
         txID: utx,
@@ -286,7 +285,7 @@ describe('PlatformVMAPI', () => {
     const stakeAmount = new BN(13);
     const rewardAddress = 'fedcba';
     const utx = 'valid';
-    const result:Promise<string> = api.addDelegator(username, password, nodeID, startTime, endTime, stakeAmount, rewardAddress);
+    const result:Promise<string> = api.addDelegator(username, password, [addrA], addrA, nodeID, startTime, endTime, stakeAmount, rewardAddress);
     const payload:object = {
       result: {
         txID: utx,
@@ -434,7 +433,7 @@ describe('PlatformVMAPI', () => {
     let username = "Robert";
     let password = "Paulson";
     let txID = "valid";
-    let result:Promise<string> = api.exportAVAX(username, password, amount, to);
+    let result:Promise<string> = api.exportAVAX(username, password, [addrA], addrA, amount, to);
     let payload:object = {
         "result": {
             "txID": txID
@@ -456,7 +455,7 @@ describe('PlatformVMAPI', () => {
     let username = "Robert";
     let password = "Paulson";
     let txID = "valid";
-    let result:Promise<string> = api.importAVAX(username, password, to, blockchainid);
+    let result:Promise<string> = api.importAVAX(username, password, [addrA], addrA, to, blockchainid);
     let payload:object = {
         "result": {
             "txID": txID
@@ -479,7 +478,7 @@ describe('PlatformVMAPI', () => {
     const name:string = 'Some Blockchain';
     const genesis:string = '{ruh:"roh"}';
     const subnetID:Buffer = Buffer.from('abcdef', 'hex');
-    const result:Promise<string> = api.createBlockchain(username, password, subnetID, vmID, [1,2,3], name, genesis);
+    const result:Promise<string> = api.createBlockchain(username, password, [addrA], addrA, subnetID, vmID, [1,2,3], name, genesis);
     const payload:object = {
       result: {
         txID: blockchainID,
@@ -539,7 +538,7 @@ describe('PlatformVMAPI', () => {
     const controlKeys = ['abcdef'];
     const threshold = 13;
     const utx = 'valid';
-    const result:Promise<string> = api.createSubnet(username, password, controlKeys, threshold);
+    const result:Promise<string> = api.createSubnet(username, password, [addrA], addrA, controlKeys, threshold);
     const payload:object = {
       result: {
         txID: utx,
@@ -693,7 +692,7 @@ describe('PlatformVMAPI', () => {
   test('getTx', async () => {
     const txid:string = 'f966750f438867c3c9828ddcdbe660e21ccdbb36a9276958f011ba472f75d4e7';
 
-    const result:Promise<string> = api.getTx(txid);
+    const result:Promise<string> = api.getTx(txid, 'hex');
     const payload:object = {
       result: {
         tx: 'sometx',
@@ -739,14 +738,12 @@ describe('PlatformVMAPI', () => {
     set.add(OPUTXOstr1);
     set.addArray([OPUTXOstr2, OPUTXOstr3]);
 
-    const persistOpts:PersistanceOptions = new PersistanceOptions('test', true, 'union');
-    expect(persistOpts.getMergeRule()).toBe('union');
     let addresses:Array<string> = set.getAddresses().map((a) => api.addressFromBuffer(a));
     let result:Promise<{
       numFetched:number,
       utxos:UTXOSet,
       endIndex:{address:string, utxo:string}
-    }> = api.getUTXOs(addresses, api.getBlockchainID(), 0, undefined, persistOpts);
+    }> = api.getUTXOs(addresses, api.getBlockchainID(), 0, undefined, 'cb58');
     const payload:object = {
       result: {
         numFetched:3,
@@ -762,15 +759,6 @@ describe('PlatformVMAPI', () => {
     let response:UTXOSet = (await result).utxos;
 
     expect(mockAxios.request).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(response.getAllUTXOStrings().sort())).toBe(JSON.stringify(set.getAllUTXOStrings().sort()));
-
-    addresses = set.getAddresses().map((a) => api.addressFromBuffer(a));
-    result =  api.getUTXOs(addresses, api.getBlockchainID(), 0, undefined, persistOpts);
-
-    mockAxios.mockResponse(responseObj);
-    response = (await result).utxos;
-
-    expect(mockAxios.request).toHaveBeenCalledTimes(2);
     expect(JSON.stringify(response.getAllUTXOStrings().sort())).toBe(JSON.stringify(set.getAllUTXOStrings().sort()));
   });
 

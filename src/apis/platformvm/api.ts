@@ -132,7 +132,7 @@ export class PlatformVMAPI extends JRPCAPI {
    */
   getAVAXAssetID = async (refresh:boolean = false):Promise<Buffer> => {
     if (typeof this.AVAXAssetID === 'undefined' || refresh) {
-      const assetID:string = await this.getStakingAssetID("0");
+      const assetID:string = await this.getStakingAssetID("");
       this.AVAXAssetID = bintools.cb58Decode(assetID);
     }
     return this.AVAXAssetID;
