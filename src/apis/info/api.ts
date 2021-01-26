@@ -70,7 +70,7 @@ export class InfoAPI extends JRPCAPI {
   /**
    * Fetches the nodeIP from the node.
    *
-   * @returns Returns a Promise<string> of the nodeID.
+   * @returns Returns a Promise<string> of the nodeIP.
    */
   getNodeIP = async (): Promise<string> => {
     const response: RequestResponseData = await this.callMethod("info.getNodeIP");
