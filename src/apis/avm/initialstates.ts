@@ -4,11 +4,11 @@
  */
 
 import { Buffer } from "buffer/";
-import BinTools  from '../../utils/bintools';
-import { Output } from '../../common/output';
-import { SelectOutputClass } from './outputs';
-import { AVMConstants } from './constants';
-import { Serializable, Serialization, SerializedEncoding } from '../../utils/serialization';
+import BinTools  from "../../utils/bintools";
+import { Output } from "../../common/output";
+import { SelectOutputClass } from "./outputs";
+import { AVMConstants } from "./constants";
+import { Serializable, Serialization, SerializedEncoding } from "../../utils/serialization";
 /**
  * @ignore
  */
@@ -85,28 +85,28 @@ export class InitialStates extends Serializable{
     return offset;
   }
 
-  toBuffer():Buffer {
-    const buff:Array<Buffer> = [];
-    const keys:Array<number> = Object.keys(this.fxs).map((k) => parseInt(k, 10)).sort();
-    const klen:Buffer = Buffer.alloc(4);
+  toBuffer(): Buffer {
+    const buff: Buffer[] = [];
+    const keys: number[] = Object.keys(this.fxs).map((k: string) => parseInt(k, 10)).sort();
+    const klen: Buffer = Buffer.alloc(4);
     klen.writeUInt32BE(keys.length, 0);
     buff.push(klen);
-    for (let i = 0; i < keys.length; i++) {
-      const fxid:number = keys[i];
-      const fxidbuff:Buffer = Buffer.alloc(4);
+    keys.forEach((key: number) => {
+      const fxid: number = key;
+      const fxidbuff: Buffer = Buffer.alloc(4);
       fxidbuff.writeUInt32BE(fxid, 0);
       buff.push(fxidbuff);
-      const initialState = this.fxs[fxid].sort(Output.comparator());
-      const statelen:Buffer = Buffer.alloc(4);
+      const initialState: Output[] = this.fxs[fxid].sort(Output.comparator());
+      const statelen: Buffer = Buffer.alloc(4);
       statelen.writeUInt32BE(initialState.length, 0);
       buff.push(statelen);
-      for (let j = 0; j < initialState.length; j++) {
-        const outputid:Buffer = Buffer.alloc(4);
-        outputid.writeInt32BE(initialState[j].getOutputID(), 0);
+      initialState.forEach((inState: Output) => {
+        const outputid: Buffer = Buffer.alloc(4);
+        outputid.writeInt32BE(inState.getOutputID(), 0);
         buff.push(outputid);
-        buff.push(initialState[j].toBuffer());
-      }
-    }
+        buff.push(inState.toBuffer());
+      });
+    });
     return Buffer.concat(buff);
   }
 

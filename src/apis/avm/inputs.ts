@@ -2,11 +2,11 @@
  * @packageDocumentation
  * @module API-AVM-Inputs
  */
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { AVMConstants } from './constants';
-import { Input, StandardTransferableInput, StandardAmountInput } from '../../common/input';
-import { Serialization, SerializedEncoding } from '../../utils/serialization';
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { AVMConstants } from "./constants";
+import { Input, StandardTransferableInput, StandardAmountInput } from "../../common/input";
+import { Serialization, SerializedEncoding } from "../../utils/serialization";
 
 /**
  * @ignore
@@ -22,7 +22,7 @@ const serializer = Serialization.getInstance();
  * @returns An instance of an [[Input]]-extended class.
  */
 export const SelectInputClass = (inputid:number, ...args:Array<any>):Input => {
-  if (inputid === AVMConstants.SECPINPUTID) {
+  if (inputid === AVMConstants.SECPXFERINPUTID || inputid === AVMConstants.SECPXFERINPUTID_CODECONE) {
     return new SECPTransferInput(...args);
   }
   /* istanbul ignore next */
@@ -76,25 +76,37 @@ export abstract class AmountInput extends StandardAmountInput {
 
 export class SECPTransferInput extends AmountInput {
   protected _typeName = "SECPTransferInput";
-  protected _typeID = AVMConstants.SECPINPUTID;
+  protected _codecID = AVMConstants.LATESTCODEC;
+  protected _typeID = this._codecID === 0 ? AVMConstants.SECPXFERINPUTID : AVMConstants.SECPXFERINPUTID_CODECONE;
 
   //serialize and deserialize both are inherited
+
+  setCodecID(codecID: number): void {
+    this._codecID = codecID;
+    this._typeID = this._codecID === 0 ? AVMConstants.SECPXFERINPUTID : AVMConstants.SECPXFERINPUTID_CODECONE;
+  }
 
   /**
      * Returns the inputID for this input
      */
-  getInputID():number {
-    return AVMConstants.SECPINPUTID;
+  getInputID(): number {
+    return this._typeID;
   }
 
-  getCredentialID = ():number => AVMConstants.SECPCREDENTIAL;
+  getCredentialID(): number {
+    if(this._codecID === 0) {
+      return AVMConstants.SECPCREDENTIAL;
+    } else if (this._codecID === 1) {
+      return AVMConstants.SECPCREDENTIAL_CODECONE;
+    }
+  }
 
-  create(...args:any[]):this{
+  create(...args: any[]): this {
     return new SECPTransferInput(...args) as this;
   }
 
-  clone():this {
-    const newout:SECPTransferInput = this.create()
+  clone(): this {
+    const newout: SECPTransferInput = this.create()
     newout.fromBuffer(this.toBuffer());
     return newout as this;
   }

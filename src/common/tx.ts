@@ -24,6 +24,7 @@ import {
   Serialization, 
   SerializedEncoding 
 } from '../utils/serialization';
+import { AVMConstants } from '../../src/apis/avm/constants';
 
 /**
  * @ignore
@@ -68,60 +69,60 @@ export abstract class StandardBaseTx<KPClass extends StandardKeyPair, KCClass ex
   /**
    * Returns the id of the [[StandardBaseTx]]
    */
-  abstract getTxType:() => number;
+  abstract getTxType(): number;
 
   /**
    * Returns the NetworkID as a number
    */
-  getNetworkID = ():number => this.networkid.readUInt32BE(0);
+  getNetworkID = (): number => this.networkid.readUInt32BE(0);
 
   /**
    * Returns the Buffer representation of the BlockchainID
    */
-  getBlockchainID = ():Buffer => this.blockchainid;
+  getBlockchainID = (): Buffer => this.blockchainid;
 
   /**
    * Returns the array of [[StandardTransferableInput]]s
    */
-  abstract getIns():Array<StandardTransferableInput>;
+  abstract getIns(): StandardTransferableInput[];
 
   /**
    * Returns the array of [[StandardTransferableOutput]]s
    */
-  abstract getOuts():Array<StandardTransferableOutput>;
+  abstract getOuts(): StandardTransferableOutput[];
 
   /**
    * Returns the array of combined total [[StandardTransferableOutput]]s
    */
-  abstract getTotalOuts():Array<StandardTransferableOutput>;
+  abstract getTotalOuts(): StandardTransferableOutput[];
 
   /**
    * Returns the {@link https://github.com/feross/buffer|Buffer} representation of the memo 
    */
-  getMemo = ():Buffer => this.memo;
+  getMemo = (): Buffer => this.memo;
 
   /**
    * Returns a {@link https://github.com/feross/buffer|Buffer} representation of the [[StandardBaseTx]].
    */
-  toBuffer():Buffer {
+  toBuffer(): Buffer {
     this.outs.sort(StandardTransferableOutput.comparator());
     this.ins.sort(StandardTransferableInput.comparator());
     this.numouts.writeUInt32BE(this.outs.length, 0);
     this.numins.writeUInt32BE(this.ins.length, 0);
     let bsize:number = this.networkid.length + this.blockchainid.length + this.numouts.length;
     const barr:Array<Buffer> = [this.networkid, this.blockchainid, this.numouts];
-    for (let i = 0; i < this.outs.length; i++) {
-      const b:Buffer = this.outs[i].toBuffer();
+    this.outs.forEach((out: StandardTransferableOutput) => {
+      const b:Buffer = out.toBuffer();
       barr.push(b);
       bsize += b.length;
-    }
+    });
     barr.push(this.numins);
     bsize += this.numins.length;
-    for (let i = 0; i < this.ins.length; i++) {
-      const b:Buffer = this.ins[i].toBuffer();
+    this.ins.forEach((input: StandardTransferableInput) => {
+      const b:Buffer = input.toBuffer();
       barr.push(b);
       bsize += b.length;
-    }
+    });
     let memolen:Buffer = Buffer.alloc(4);
     memolen.writeUInt32BE(this.memo.length, 0);
     barr.push(memolen);
@@ -158,16 +159,22 @@ export abstract class StandardBaseTx<KPClass extends StandardKeyPair, KCClass ex
   /**
    * Class representing a StandardBaseTx which is the foundation for all transactions.
    *
-   * @param networkid Optional networkid, [[DefaultNetworkID]]
-   * @param blockchainid Optional blockchainid, default Buffer.alloc(32, 16)
+   * @param networkID Optional networkID, [[DefaultNetworkID]]
+   * @param blockchainID Optional blockchainID, default Buffer.alloc(32, 16)
    * @param outs Optional array of the [[TransferableOutput]]s
    * @param ins Optional array of the [[TransferableInput]]s
    * @param memo Optional {@link https://github.com/feross/buffer|Buffer} for the memo field
    */
-  constructor(networkid:number = DefaultNetworkID, blockchainid:Buffer = Buffer.alloc(32, 16), outs:Array<StandardTransferableOutput> = undefined, ins:Array<StandardTransferableInput> = undefined, memo:Buffer = undefined) {
+  constructor(
+    networkID: number = DefaultNetworkID, 
+    blockchainID: Buffer = Buffer.alloc(32, 16), 
+    outs: StandardTransferableOutput[] = undefined, 
+    ins: StandardTransferableInput[] = undefined, 
+    memo: Buffer = undefined
+  ) {
     super();
-    this.networkid.writeUInt32BE(networkid, 0);
-    this.blockchainid = blockchainid;
+    this.networkid.writeUInt32BE(networkID, 0);
+    this.blockchainid = blockchainID;
     if(typeof memo != "undefined"){
       this.memo = memo;
     }
@@ -195,30 +202,27 @@ SBTx extends StandardBaseTx<KPClass, KCClass>
     let fields:object = super.serialize(encoding);
     return {
       ...fields,
-      "codecid": serializer.encoder(this.codecid, encoding, "number", "decimalString", 2),
       "transaction": this.transaction.serialize(encoding)
     };
   };
 
   deserialize(fields:object, encoding:SerializedEncoding = "hex") {
     super.deserialize(fields, encoding);
-    this.codecid = serializer.decoder(fields["codecid"], encoding, "decimalString", "number");
   }
 
-  protected codecid:number = 0;
   protected transaction:SBTx;
 
   /**
    * Returns the CodecID as a number
    */
-  getCodecID = ():number => this.codecid;
+  getCodecID = ():number => this._codecID;
 
   /**
   * Returns the {@link https://github.com/feross/buffer|Buffer} representation of the CodecID
   */
   getCodecIDBuffer = ():Buffer => {
     let codecBuf:Buffer = Buffer.alloc(2);
-    codecBuf.writeUInt16BE(this.codecid, 0);
+    codecBuf.writeUInt16BE(this._codecID, 0);
     return codecBuf;
   } 
 
@@ -276,11 +280,12 @@ SBTx extends StandardBaseTx<KPClass, KCClass>
   abstract fromBuffer(bytes:Buffer, offset?:number):number;
 
   toBuffer():Buffer {
-    const codecid:Buffer = this.getCodecIDBuffer();
+    const codecBuf:Buffer = Buffer.alloc(2);
+    codecBuf.writeUInt16BE(this.transaction.getCodecID(), 0)
     const txtype:Buffer = Buffer.alloc(4);
     txtype.writeUInt32BE(this.transaction.getTxType(), 0);
     const basebuff = this.transaction.toBuffer();
-    return Buffer.concat([codecid, txtype, basebuff], codecid.length + txtype.length + basebuff.length);
+    return Buffer.concat([codecBuf, txtype, basebuff], codecBuf.length + txtype.length + basebuff.length);
   }
 
   /**
@@ -296,9 +301,8 @@ SBTx extends StandardBaseTx<KPClass, KCClass>
     StandardUnsignedTx<KPClass, KCClass, SBTx>
   >;
 
-  constructor(transaction:SBTx = undefined, codecid:number = 0) {
+  constructor(transaction:SBTx = undefined) {
     super();
-    this.codecid = codecid;
     this.transaction = transaction;
   }
 }
@@ -341,23 +345,26 @@ export abstract class StandardTx<
   /**
    * Returns a {@link https://github.com/feross/buffer|Buffer} representation of the [[StandardTx]].
    */
-  toBuffer():Buffer {
-    const txbuff:Buffer = this.unsignedTx.toBuffer();
-    let bsize:number = txbuff.length;
-    const credlen:Buffer = Buffer.alloc(4);
+  toBuffer(): Buffer {
+    const tx = this.unsignedTx.getTransaction()
+    const codecID: number = tx.getCodecID();
+    const txbuff: Buffer = this.unsignedTx.toBuffer();
+    let bsize: number = txbuff.length;
+    const credlen: Buffer = Buffer.alloc(4);
     credlen.writeUInt32BE(this.credentials.length, 0);
-    const barr:Array<Buffer> = [txbuff, credlen];
+    const barr: Buffer[] = [txbuff, credlen];
     bsize += credlen.length;
-    for (let i = 0; i < this.credentials.length; i++) {
-      const credid:Buffer = Buffer.alloc(4);
-      credid.writeUInt32BE(this.credentials[i].getCredentialID(), 0);
+    this.credentials.forEach((credential: Credential) => {
+      credential.setCodecID(codecID)
+      const credid: Buffer = Buffer.alloc(4);
+      credid.writeUInt32BE(credential.getCredentialID(), 0);
       barr.push(credid);
       bsize += credid.length;
-      const credbuff:Buffer = this.credentials[i].toBuffer();
+      const credbuff: Buffer = credential.toBuffer();
       bsize += credbuff.length;
       barr.push(credbuff);
-    }
-    const buff:Buffer = Buffer.concat(barr, bsize);
+    });
+    const buff: Buffer = Buffer.concat(barr, bsize);
     return buff;
   }
 

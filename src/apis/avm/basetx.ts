@@ -2,18 +2,18 @@
  * @packageDocumentation
  * @module API-AVM-BaseTx
  */
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { AVMConstants } from './constants';
-import { TransferableOutput } from './outputs';
-import { TransferableInput } from './inputs';
-import { SelectCredentialClass } from './credentials';
-import { KeyChain, KeyPair } from './keychain';
-import { StandardBaseTx } from '../../common/tx';
-import { Signature, SigIdx, Credential } from '../../common/credentials';
-import { DefaultNetworkID } from '../../utils/constants';
-import { SelectTxClass } from './tx';
-import { Serialization, SerializedEncoding } from '../../utils/serialization';
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { AVMConstants } from "./constants";
+import { TransferableOutput } from "./outputs";
+import { TransferableInput } from "./inputs";
+import { SelectCredentialClass } from "./credentials";
+import { KeyChain, KeyPair } from "./keychain";
+import { StandardBaseTx } from "../../common/tx";
+import { Signature, SigIdx, Credential } from "../../common/credentials";
+import { DefaultNetworkID } from "../../utils/constants";
+import { SelectTxClass } from "./tx";
+import { Serialization, SerializedEncoding } from "../../utils/serialization";
 
 /**
  * @ignore
@@ -24,9 +24,10 @@ const serializer = Serialization.getInstance();
 /**
  * Class representing a base for all transactions.
  */
-export class BaseTx  extends StandardBaseTx<KeyPair, KeyChain>{
+export class BaseTx extends StandardBaseTx<KeyPair, KeyChain>{
   protected _typeName = "BaseTx";
-  protected _typeID = AVMConstants.BASETX;
+  protected _codecID = AVMConstants.LATESTCODEC;
+  protected _typeID = this._codecID === 0 ? AVMConstants.BASETX : AVMConstants.BASETX_CODECONE;
 
   //serialize is inherited
 
@@ -56,6 +57,11 @@ export class BaseTx  extends StandardBaseTx<KeyPair, KeyChain>{
 
   getTotalOuts():Array<TransferableOutput> {
     return this.getOuts() as Array<TransferableOutput>;
+  }
+
+  setCodecID(codecID: number): void {
+    this._codecID = codecID;
+    this._typeID = this._codecID === 0 ? AVMConstants.BASETX : AVMConstants.BASETX_CODECONE;
   }
 
   /**
@@ -148,13 +154,19 @@ export class BaseTx  extends StandardBaseTx<KeyPair, KeyChain>{
   /**
    * Class representing a BaseTx which is the foundation for all transactions.
    *
-   * @param networkid Optional networkid, [[DefaultNetworkID]]
-   * @param blockchainid Optional blockchainid, default Buffer.alloc(32, 16)
+   * @param networkID Optional networkID, [[DefaultNetworkID]]
+   * @param blockchainID Optional blockchainID, default Buffer.alloc(32, 16)
    * @param outs Optional array of the [[TransferableOutput]]s
    * @param ins Optional array of the [[TransferableInput]]s
    * @param memo Optional {@link https://github.com/feross/buffer|Buffer} for the memo field
    */
-  constructor(networkid:number = DefaultNetworkID, blockchainid:Buffer = Buffer.alloc(32, 16), outs:Array<TransferableOutput> = undefined, ins:Array<TransferableInput> = undefined, memo:Buffer = undefined) {
-    super(networkid, blockchainid, outs, ins, memo);
+  constructor(
+    networkID: number = DefaultNetworkID, 
+    blockchainID: Buffer = Buffer.alloc(32, 16), 
+    outs: TransferableOutput[] = undefined, 
+    ins: TransferableInput[] = undefined, 
+    memo: Buffer = undefined
+  ) {
+    super(networkID, blockchainID, outs, ins, memo);
   }
 }

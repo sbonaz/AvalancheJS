@@ -2,26 +2,26 @@
  * @packageDocumentation
  * @module API-AVM-Transactions
  */
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { AVMConstants } from './constants';
-import { SelectCredentialClass } from './credentials';
-import { KeyChain, KeyPair } from './keychain';
-import { Credential } from '../../common/credentials';
-import { StandardTx, StandardUnsignedTx } from '../../common/tx';
-import createHash from 'create-hash';
-import { BaseTx } from './basetx';
-import { CreateAssetTx } from './createassettx';
-import { OperationTx } from './operationtx';
-import { ImportTx } from './importtx';
-import { ExportTx } from './exporttx';
-import { Serialization, SerializedEncoding } from '../../utils/serialization';
+
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { AVMConstants } from "./constants";
+import { SelectCredentialClass } from "./credentials";
+import { KeyChain, KeyPair } from "./keychain";
+import { Credential } from "../../common/credentials";
+import { StandardTx, StandardUnsignedTx } from "../../common/tx";
+import createHash from "create-hash";
+import { BaseTx } from "./basetx";
+import { CreateAssetTx } from "./createassettx";
+import { OperationTx } from "./operationtx";
+import { ImportTx } from "./importtx";
+import { ExportTx } from "./exporttx";
+import { Serialization, SerializedEncoding } from "../../utils/serialization";
 
 /**
  * @ignore
  */
 const bintools = BinTools.getInstance();
-const serializer = Serialization.getInstance();
 
 /**
  * Takes a buffer representing the output and returns the proper [[BaseTx]] instance.
@@ -64,11 +64,13 @@ export class UnsignedTx extends StandardUnsignedTx<KeyPair, KeyChain, BaseTx> {
   }
 
   fromBuffer(bytes:Buffer, offset:number = 0):number {
-    this.codecid = bintools.copyFrom(bytes, offset, offset + 2).readUInt16BE(0);
+    // TODO confirm this codecid works
+    const codecID: number = bintools.copyFrom(bytes, offset, offset + 2).readUInt16BE(0);
     offset += 2;
     const txtype:number = bintools.copyFrom(bytes, offset, offset + 4).readUInt32BE(0);
     offset += 4;
     this.transaction = SelectTxClass(txtype);
+    this.transaction.setCodecID(codecID);
     return this.transaction.fromBuffer(bytes, offset);
   }
   
@@ -81,7 +83,7 @@ export class UnsignedTx extends StandardUnsignedTx<KeyPair, KeyChain, BaseTx> {
    */
   sign(kc:KeyChain):Tx {
     const txbuff = this.toBuffer();
-    const msg:Buffer = Buffer.from(createHash('sha256').update(txbuff).digest());
+    const msg:Buffer = Buffer.from(createHash("sha256").update(txbuff).digest());
     const sigs:Array<Credential> = this.transaction.sign(msg, kc);
     return new Tx(this, sigs);
   }
@@ -129,5 +131,4 @@ export class Tx extends StandardTx<KeyPair, KeyChain, UnsignedTx> {
     }
     return offset;
   }
-
 }

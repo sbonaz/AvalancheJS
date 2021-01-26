@@ -2,10 +2,14 @@
  * @packageDocumentation
  * @module API-Admin
  */
-import AvalancheCore from '../../avalanche';
-import { JRPCAPI } from '../../common/jrpcapi';
-import { RequestResponseData } from '../../common/apibase';
 
+import AvalancheCore from "../../avalanche";
+import { JRPCAPI } from "../../common/jrpcapi";
+import { RequestResponseData } from "../../common/apibase";
+import {
+  iAliasParams, 
+  iAliasChainParams 
+} from "./interfaces";
 
 /**
  * Class for interacting with a node's AdminAPI.
@@ -22,37 +26,37 @@ export class AdminAPI extends JRPCAPI {
      * Assign an API an alias, a different endpoint for the API. The original endpoint will still
      * work. This change only affects this node; other nodes will not know about this alias.
      *
-     * @param endpoint The original endpoint of the API. endpoint should only include the part of
+     * @param endpoint The original endpoint of the API. Endpoint should only include the part of
      * the endpoint after /ext/
      * @param alias The API being aliased can now be called at ext/alias
      *
      * @returns Returns a Promise<boolean> containing success, true for success, false for failure.
      */
-  alias = async (endpoint:string, alias:string):Promise<boolean> => {
-    const params:any = {
+  alias = async (endpoint: string, alias: string): Promise<boolean> => {
+    const params: iAliasParams = {
       endpoint,
       alias,
     };
-    return this.callMethod('admin.alias', params)
-      .then((response:RequestResponseData) => response.data.result.success);
+    const response: RequestResponseData = await this.callMethod("admin.alias", params);
+    return response.data.result.success;
   };
 
   /**
      * Give a blockchain an alias, a different name that can be used any place the blockchain’s
      * ID is used.
      *
-     * @param endpoint The blockchain’s ID
+     * @param chain The blockchain’s ID
      * @param alias Can now be used in place of the blockchain’s ID (in API endpoints, for example)
      *
      * @returns Returns a Promise<boolean> containing success, true for success, false for failure.
      */
-  aliasChain = async (chain:string, alias:string):Promise<boolean> => {
-    const params:any = {
+  aliasChain = async (chain: string, alias: string): Promise<boolean> => {
+    const params: iAliasChainParams = {
       chain,
       alias,
     };
-    return this.callMethod('admin.aliasChain', params)
-      .then((response:RequestResponseData) => response.data.result.success);
+    const response: RequestResponseData = await this.callMethod("admin.aliasChain", params);
+    return response.data.result.success;
   };
 
   /**
@@ -60,10 +64,10 @@ export class AdminAPI extends JRPCAPI {
      *
      * @returns Promise for a boolean that is true on success.
      */
-  lockProfile = async ():Promise<boolean> => {
-    const params:any = {};
-    return this.callMethod('admin.lockProfile', params)
-      .then((response:RequestResponseData) => response.data.result.success);
+  lockProfile = async (): Promise<boolean> => {
+    const params: any = {};
+    const response: RequestResponseData = await this.callMethod("admin.lockProfile", params);
+    return response.data.result.success;
   };
 
   /**
@@ -71,10 +75,10 @@ export class AdminAPI extends JRPCAPI {
      *
      * @returns Promise for a boolean that is true on success.
      */
-  memoryProfile = async ():Promise<boolean> => {
-    const params:any = {};
-    return this.callMethod('admin.memoryProfile', params)
-      .then((response:RequestResponseData) => response.data.result.success);
+  memoryProfile = async (): Promise<boolean> => {
+    const params: any = {};
+    const response: RequestResponseData = await this.callMethod("admin.memoryProfile", params);
+    return response.data.result.success;
   };
 
   /**
@@ -83,10 +87,10 @@ export class AdminAPI extends JRPCAPI {
      *
      * @returns Promise for a boolean that is true on success.
      */
-  startCPUProfiler = async ():Promise<boolean> => {
-    const params:any = {};
-    return this.callMethod('admin.startCPUProfiler', params)
-      .then((response:RequestResponseData) => response.data.result.success);
+  startCPUProfiler = async (): Promise<boolean> => {
+    const params: any = {};
+    const response: RequestResponseData = await this.callMethod("admin.startCPUProfiler", params);
+    return response.data.result.success;
   };
 
   /**
@@ -94,8 +98,10 @@ export class AdminAPI extends JRPCAPI {
      *
      * @returns Promise for a boolean that is true on success.
      */
-  stopCPUProfiler = async ():Promise<boolean> => this.callMethod('admin.stopCPUProfiler')
-    .then((response:RequestResponseData) => response.data.result.success);
+  stopCPUProfiler = async (): Promise<boolean> => {
+    const response: RequestResponseData = await this.callMethod("admin.stopCPUProfiler");
+    return response.data.result.success;
+  } 
 
   /**
      * This class should not be instantiated directly. Instead use the [[Avalanche.addAPI]]
@@ -104,5 +110,5 @@ export class AdminAPI extends JRPCAPI {
      * @param core A reference to the Avalanche class
      * @param baseurl Defaults to the string "/ext/admin" as the path to rpc's baseurl
      */
-  constructor(core:AvalancheCore, baseurl:string = '/ext/admin') { super(core, baseurl); }
+  constructor(core: AvalancheCore, baseurl: string = "/ext/admin") { super(core, baseurl); }
 }

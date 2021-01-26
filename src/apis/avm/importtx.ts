@@ -2,17 +2,17 @@
  * @packageDocumentation
  * @module API-AVM-ImportTx
  */
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { AVMConstants } from './constants';
-import { TransferableOutput } from './outputs';
-import { TransferableInput } from './inputs';
-import { BaseTx } from './basetx';
-import { SelectCredentialClass } from './credentials';
-import { Signature, SigIdx, Credential } from '../../common/credentials';
-import { KeyChain, KeyPair } from './keychain';
-import { DefaultNetworkID } from '../../utils/constants';
-import { Serialization, SerializedEncoding } from '../../utils/serialization';
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { AVMConstants } from "./constants";
+import { TransferableOutput } from "./outputs";
+import { TransferableInput } from "./inputs";
+import { BaseTx } from "./basetx";
+import { SelectCredentialClass } from "./credentials";
+import { Signature, SigIdx, Credential } from "../../common/credentials";
+import { KeyChain, KeyPair } from "./keychain";
+import { DefaultNetworkID } from "../../utils/constants";
+import { Serialization, SerializedEncoding } from "../../utils/serialization";
 
 /**
  * @ignore
@@ -25,7 +25,8 @@ const serializer = Serialization.getInstance();
  */
 export class ImportTx extends BaseTx {
   protected _typeName = "ImportTx";
-  protected _typeID = AVMConstants.IMPORTTX;
+  protected _codecID = AVMConstants.LATESTCODEC;
+  protected _typeID = this._codecID === 0 ? AVMConstants.IMPORTTX : AVMConstants.IMPORTTX_CODECONE;
 
   serialize(encoding:SerializedEncoding = "hex"):object {
     let fields:object = super.serialize(encoding);
@@ -51,6 +52,11 @@ export class ImportTx extends BaseTx {
   protected numIns:Buffer = Buffer.alloc(4);
   protected importIns:Array<TransferableInput> = [];
 
+  setCodecID(codecID: number): void {
+    this._codecID = codecID;
+    this._typeID = this._codecID === 0 ? AVMConstants.IMPORTTX : AVMConstants.IMPORTTX_CODECONE;
+  }
+
   /**
      * Returns the id of the [[ImportTx]]
      */
@@ -74,7 +80,7 @@ export class ImportTx extends BaseTx {
      *
      * @remarks assume not-checksummed
      */
-  fromBuffer(bytes:Buffer, offset:number = 0):number {
+  fromBuffer(bytes:Buffer, offset:number = 0): number {
     offset = super.fromBuffer(bytes, offset);
     this.sourceChain = bintools.copyFrom(bytes, offset, offset + 32);
     offset += 32;
@@ -92,16 +98,16 @@ export class ImportTx extends BaseTx {
   /**
    * Returns a {@link https://github.com/feross/buffer|Buffer} representation of the [[ImportTx]].
    */
-  toBuffer():Buffer {
+  toBuffer(): Buffer {
     if(typeof this.sourceChain === "undefined") {
       throw new Error("ImportTx.toBuffer -- this.sourceChain is undefined");
     }
     this.numIns.writeUInt32BE(this.importIns.length, 0);
-    let barr:Array<Buffer> = [super.toBuffer(), this.sourceChain, this.numIns];
+    let barr: Buffer[] = [super.toBuffer(), this.sourceChain, this.numIns];
     this.importIns = this.importIns.sort(TransferableInput.comparator());
-    for(let i = 0; i < this.importIns.length; i++) {
-        barr.push(this.importIns[i].toBuffer());
-    }
+    this.importIns.forEach((importIn: TransferableInput) => {
+      barr.push(importIn.toBuffer());
+    });
     return Buffer.concat(barr);
   }
   /**
@@ -149,8 +155,8 @@ export class ImportTx extends BaseTx {
   /**
    * Class representing an unsigned Import transaction.
    *
-   * @param networkid Optional networkid, [[DefaultNetworkID]]
-   * @param blockchainid Optional blockchainid, default Buffer.alloc(32, 16)
+   * @param networkID Optional networkID, [[DefaultNetworkID]]
+   * @param blockchainID Optional blockchainID, default Buffer.alloc(32, 16)
    * @param outs Optional array of the [[TransferableOutput]]s
    * @param ins Optional array of the [[TransferableInput]]s
    * @param memo Optional {@link https://github.com/feross/buffer|Buffer} for the memo field
@@ -158,13 +164,17 @@ export class ImportTx extends BaseTx {
    * @param importIns Array of [[TransferableInput]]s used in the transaction
    */
   constructor(
-    networkid:number = DefaultNetworkID, blockchainid:Buffer = Buffer.alloc(32, 16), 
-    outs:Array<TransferableOutput> = undefined, ins:Array<TransferableInput> = undefined,
-    memo:Buffer = undefined, sourceChain:Buffer = undefined, importIns:Array<TransferableInput> = undefined
+    networkID: number = DefaultNetworkID, 
+    blockchainID: Buffer = Buffer.alloc(32, 16), 
+    outs: TransferableOutput[] = undefined, 
+    ins: TransferableInput[] = undefined,
+    memo: Buffer = undefined, 
+    sourceChain: Buffer = undefined, 
+    importIns: TransferableInput[] = undefined
   ) {
-    super(networkid, blockchainid, outs, ins, memo);
+    super(networkID, blockchainID, outs, ins, memo);
     this.sourceChain = sourceChain; // do not correct, if it's wrong it'll bomb on toBuffer
-    if (typeof importIns !== 'undefined' && Array.isArray(importIns)) {
+    if (typeof importIns !== "undefined" && Array.isArray(importIns)) {
       for (let i = 0; i < importIns.length; i++) {
         if (!(importIns[i] instanceof TransferableInput)) {
           throw new Error("Error - ImportTx.constructor: invalid TransferableInput in array parameter 'importIns'");

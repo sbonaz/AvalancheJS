@@ -2,17 +2,18 @@
  * @packageDocumentation
  * @module API-PlatformVM-ImportTx
  */
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { PlatformVMConstants } from './constants';
-import { TransferableOutput } from './outputs';
-import { TransferableInput } from './inputs';
-import { KeyChain, KeyPair } from './keychain';
-import { SelectCredentialClass } from './credentials';
-import { Signature, SigIdx, Credential } from '../../common/credentials';
-import { BaseTx } from './basetx';
-import { DefaultNetworkID } from '../../utils/constants';
-import { Serialization, SerializedEncoding } from '../../utils/serialization';
+
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { PlatformVMConstants } from "./constants";
+import { TransferableOutput } from "./outputs";
+import { TransferableInput } from "./inputs";
+import { KeyChain, KeyPair } from "./keychain";
+import { SelectCredentialClass } from "./credentials";
+import { Signature, SigIdx, Credential } from "../../common/credentials";
+import { BaseTx } from "./basetx";
+import { DefaultNetworkID } from "../../utils/constants";
+import { Serialization, SerializedEncoding } from "../../utils/serialization";
 
 /**
  * @ignore
@@ -88,7 +89,7 @@ export class ImportTx extends BaseTx {
    */
   toBuffer():Buffer {
     if(typeof this.sourceChain === "undefined") {
-      throw new Error("ImportTx.toBuffer -- this.sourceChain is undefined");
+      throw new Error(`ImportTx.toBuffer -- given sourceChain ${this.sourceChain} is undefined`);
     }
     this.numIns.writeUInt32BE(this.importIns.length, 0);
     let barr:Array<Buffer> = [super.toBuffer(), this.sourceChain, this.numIns];
@@ -143,8 +144,8 @@ export class ImportTx extends BaseTx {
   /**
    * Class representing an unsigned Import transaction.
    *
-   * @param networkid Optional networkid, [[DefaultNetworkID]]
-   * @param blockchainid Optional blockchainid, default Buffer.alloc(32, 16)
+   * @param networkID Optional networkID, [[DefaultNetworkID]]
+   * @param blockchainID Optional blockchainID, default Buffer.alloc(32, 16)
    * @param outs Optional array of the [[TransferableOutput]]s
    * @param ins Optional array of the [[TransferableInput]]s
    * @param memo Optional {@link https://github.com/feross/buffer|Buffer} for the memo field
@@ -152,18 +153,22 @@ export class ImportTx extends BaseTx {
    * @param importIns Array of [[TransferableInput]]s used in the transaction
    */
   constructor(
-    networkid:number = DefaultNetworkID, blockchainid:Buffer = Buffer.alloc(32, 16), 
-    outs:Array<TransferableOutput> = undefined, ins:Array<TransferableInput> = undefined,
-    memo:Buffer = undefined, sourceChain:Buffer = undefined, importIns:Array<TransferableInput> = undefined
+    networkID: number = DefaultNetworkID, 
+    blockchainID: Buffer = Buffer.alloc(32, 16), 
+    outs: TransferableOutput[] = undefined, 
+    ins: TransferableInput[] = undefined,
+    memo: Buffer = undefined, 
+    sourceChain: Buffer = undefined, 
+    importIns: TransferableInput[] = undefined
   ) {
-    super(networkid, blockchainid, outs, ins, memo);
+    super(networkID, blockchainID, outs, ins, memo);
     this.sourceChain = sourceChain; // do no correct, if it's wrong it'll bomb on toBuffer
-    if (typeof importIns !== 'undefined' && Array.isArray(importIns)) {
-      for (let i = 0; i < importIns.length; i++) {
-        if (!(importIns[i] instanceof TransferableInput)) {
+    if (typeof importIns !== "undefined" && Array.isArray(importIns)) {
+      importIns.forEach((importIn: TransferableInput) => {
+        if (!(importIn instanceof TransferableInput)) {
           throw new Error("Error - ImportTx.constructor: invalid TransferableInput in array parameter 'importIns'");
         }
-      }
+      });
       this.importIns = importIns;
     }
   }

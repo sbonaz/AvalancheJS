@@ -3,27 +3,27 @@
  * @module API-EVM-ImportTx
  */
 
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { EVMConstants } from './constants';
-import { EVMOutput } from './outputs';
-import { TransferableInput } from './inputs';
-import { EVMBaseTx } from './basetx';
-import { SelectCredentialClass } from './credentials';
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { EVMConstants } from "./constants";
+import { EVMOutput } from "./outputs";
+import { TransferableInput } from "./inputs";
+import { EVMBaseTx } from "./basetx";
+import { SelectCredentialClass } from "./credentials";
 import { 
   Signature, 
   SigIdx, 
   Credential 
-} from '../../common/credentials';
+} from "../../common/credentials";
 import { 
   KeyChain, 
   KeyPair 
-} from './keychain';
-import { DefaultNetworkID } from '../../utils/constants';
+} from "./keychain";
+import { DefaultNetworkID } from "../../utils/constants";
 import { 
   Serialization, 
   SerializedEncoding 
-} from '../../utils/serialization';
+} from "../../utils/serialization";
 
 /**
  * @ignore
@@ -189,22 +189,22 @@ export class ImportTx extends EVMBaseTx {
   /**
    * Class representing an unsigned Import transaction.
    *
-   * @param networkid Optional networkid, [[DefaultNetworkID]]
-   * @param blockchainid Optional blockchainid, default Buffer.alloc(32, 16)
-   * @param sourceChainid Optional chainid for the source inputs to import. Default platform chainid.
+   * @param networkID Optional networkID, [[DefaultNetworkID]]
+   * @param blockchainID Optional blockchainID, default Buffer.alloc(32, 16)
+   * @param sourceChainID Optional chainID for the source inputs to import. Default platform chainid.
    * @param importIns Array of [[TransferableInput]]s used in the transaction
    * @param outs Optional array of the [[EVMOutput]]s
    */
   constructor(
-    networkid: number = DefaultNetworkID, 
-    blockchainid: Buffer = Buffer.alloc(32, 16), 
-    sourceChainid: Buffer = Buffer.alloc(32, 16), 
+    networkID: number = DefaultNetworkID, 
+    blockchainID: Buffer = Buffer.alloc(32, 16), 
+    sourceChainID: Buffer = Buffer.alloc(32, 16), 
     importIns: TransferableInput[] = undefined,
     outs: EVMOutput[] = undefined
   ) {
-    super(networkid, blockchainid);
-    this.sourceChain = sourceChainid;
-    if (typeof importIns !== 'undefined' && Array.isArray(importIns)) {
+    super(networkID, blockchainID);
+    this.sourceChain = sourceChainID;
+    if (typeof importIns !== "undefined" && Array.isArray(importIns)) {
       importIns.forEach((importIn: TransferableInput) => {
         if (!(importIn instanceof TransferableInput)) {
           throw new Error("Error - ImportTx.constructor: invalid TransferableInput in array parameter 'importIns'");
@@ -212,7 +212,7 @@ export class ImportTx extends EVMBaseTx {
       });
       this.importIns = importIns;
     }
-    if (typeof outs !== 'undefined' && Array.isArray(outs)) {
+    if (typeof outs !== "undefined" && Array.isArray(outs)) {
       outs.forEach((out: EVMOutput) => {
         if (!(out instanceof EVMOutput)) {
           throw new Error("Error - ImportTx.constructor: invalid EVMOutput in array parameter 'outs'");

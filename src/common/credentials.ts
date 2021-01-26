@@ -6,6 +6,7 @@ import { NBytes } from './nbytes';
 import { Buffer } from 'buffer/';
 import BinTools from '../utils/bintools';
 import { Serializable, Serialization, SerializedEncoding } from '../utils/serialization';
+import { AVMConstants } from '../apis/avm';
 
 
 /**
@@ -121,6 +122,7 @@ export abstract class Credential extends Serializable{
   protected sigArray:Array<Signature> = [];
 
   abstract getCredentialID():number;
+  setCodecID(codecID: number):void {};
 
   /**
      * Adds a signature to the credentials and returns the index off the added signature.
@@ -130,7 +132,7 @@ export abstract class Credential extends Serializable{
     return this.sigArray.length - 1;
   };
 
-  fromBuffer(bytes, offset:number = 0):number {
+  fromBuffer(bytes:Buffer, offset:number = 0):number {
     const siglen:number = bintools.copyFrom(bytes, offset, offset + 4).readUInt32BE(0);
     offset += 4;
     this.sigArray = [];

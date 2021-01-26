@@ -3,23 +3,23 @@
  * @module API-EVM-ExportTx
  */
 
-import { Buffer } from 'buffer/';
-import BinTools from '../../utils/bintools';
-import { EVMConstants } from './constants';
-import { KeyChain, KeyPair } from './keychain';
-import { EVMBaseTx } from './basetx';
-import { SelectCredentialClass } from './credentials';
+import { Buffer } from "buffer/";
+import BinTools from "../../utils/bintools";
+import { EVMConstants } from "./constants";
+import { KeyChain, KeyPair } from "./keychain";
+import { EVMBaseTx } from "./basetx";
+import { SelectCredentialClass } from "./credentials";
 import { 
   Signature, 
   SigIdx, 
   Credential 
-} from '../../common/credentials';
-import { EVMInput } from './inputs';
+} from "../../common/credentials";
+import { EVMInput } from "./inputs";
 import { 
   Serialization, 
   SerializedEncoding 
-} from '../../utils/serialization';
-import { TransferableOutput } from './outputs';
+} from "../../utils/serialization";
+import { TransferableOutput } from "./outputs";
 
 /**
  * @ignore
@@ -157,22 +157,22 @@ export class ExportTx extends EVMBaseTx {
   /**
    * Class representing a ExportTx.
    *
-   * @param networkid Optional networkid
-   * @param blockchainid Optional blockchainid, default Buffer.alloc(32, 16)
+   * @param networkID Optional networkID
+   * @param blockchainID Optional blockchainID, default Buffer.alloc(32, 16)
    * @param destinationChain Optional destinationChain, default Buffer.alloc(32, 16)
    * @param inputs Optional array of the [[EVMInputs]]s
    * @param exportedOutputs Optional array of the [[EVMOutputs]]s
    */
   constructor(
-    networkid: number = undefined, 
-    blockchainid: Buffer = Buffer.alloc(32, 16), 
+    networkID: number = undefined, 
+    blockchainID: Buffer = Buffer.alloc(32, 16), 
     destinationChain: Buffer = Buffer.alloc(32, 16), 
     inputs: EVMInput[] = undefined, 
     exportedOutputs: TransferableOutput[] = undefined
   ) {
-    super(networkid, blockchainid);
+    super(networkID, blockchainID);
     this.destinationChain = destinationChain;
-    if (typeof inputs !== 'undefined' && Array.isArray(inputs)) {
+    if (typeof inputs !== "undefined" && Array.isArray(inputs)) {
       inputs.forEach((input: EVMInput) => {
         if (!(input instanceof EVMInput)) {
           throw new Error("Error - ExportTx.constructor: invalid EVMInput in array parameter 'inputs'");
@@ -180,7 +180,7 @@ export class ExportTx extends EVMBaseTx {
       });
       this.inputs = inputs;
     }
-    if (typeof exportedOutputs !== 'undefined' && Array.isArray(exportedOutputs)) {
+    if (typeof exportedOutputs !== "undefined" && Array.isArray(exportedOutputs)) {
         exportedOutputs.forEach((exportedOutput: TransferableOutput) => {
         if (!(exportedOutput instanceof TransferableOutput)) {
           throw new Error("Error - ExportTx.constructor: TransferableOutput EVMInput in array parameter 'exportedOutputs'");
