@@ -2,6 +2,7 @@ import mockAxios from 'jest-mock-axios';
 import { Avalanche } from 'src';
 import { InfoAPI } from 'src/apis/info/api';
 import BN from "bn.js";
+import { iPeer } from 'src/apis/info/interfaces';
 
 describe('Info', () => {
   const ip:string = '127.0.0.1';
@@ -111,6 +112,24 @@ describe('Info', () => {
     expect(response).toBe('abcd');
   });
 
+  test('getNodeIP', async () => {
+    const result:Promise<string> = info.getNodeIP();
+    const payload:object = {
+      result: {
+        ip: 'abcd',
+      },
+    };
+    const responseObj = {
+      data: payload,
+    };
+
+    mockAxios.mockResponse(responseObj);
+    const response:string = await result;
+
+    expect(mockAxios.request).toHaveBeenCalledTimes(1);
+    expect(response).toBe('abcd');
+  });
+
   test('getNodeVersion', async () => {
     const result:Promise<string> = info.getNodeVersion();
     const payload:object = {
@@ -167,7 +186,7 @@ describe('Info', () => {
 
   test('peers', async () => {
     const peers = ['p1', 'p2'];
-    const result:Promise<Array<string>> = info.peers();
+    const result:Promise<iPeer[]> = info.peers();
     const payload:object = {
       result: {
         peers,
@@ -178,7 +197,7 @@ describe('Info', () => {
     };
 
     mockAxios.mockResponse(responseObj);
-    const response:Array<string> = await result;
+    const response:iPeer[] = await result;
 
     expect(mockAxios.request).toHaveBeenCalledTimes(1);
     expect(response).toBe(peers);

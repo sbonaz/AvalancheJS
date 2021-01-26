@@ -17,3 +17,12 @@ export interface iGetTxFeeResponse {
 export interface iIsBootstrappedParams {
   chain: string
 }
+
+export interface iPeer {
+  ip: string
+  publicIP: string
+  nodeID: string
+  version: string
+  lastSent: string
+  lastReceived: string
+}

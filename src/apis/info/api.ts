@@ -9,7 +9,8 @@ import BN from "bn.js";
 import { 
   iGetBlockchainIDParams, 
   iGetTxFeeResponse, 
-  iIsBootstrappedParams 
+  iIsBootstrappedParams ,
+  iPeer
 } from "./interfaces";
 
 /**
@@ -62,9 +63,18 @@ export class InfoAPI extends JRPCAPI {
    * @returns Returns a Promise<string> of the nodeID.
    */
   getNodeID = async (): Promise<string> => {
-    const params: any = {};
-    const response: RequestResponseData = await this.callMethod("info.getNodeID", params);
+    const response: RequestResponseData = await this.callMethod("info.getNodeID");
     return response.data.result.nodeID;
+  };
+
+  /**
+   * Fetches the nodeIP from the node.
+   *
+   * @returns Returns a Promise<string> of the nodeID.
+   */
+  getNodeIP = async (): Promise<string> => {
+    const response: RequestResponseData = await this.callMethod("info.getNodeIP");
+    return response.data.result.ip;
   };
 
   /**
@@ -109,7 +119,7 @@ export class InfoAPI extends JRPCAPI {
    *
    * @returns Promise for the list of connected peers in <ip>:<port> format.
    */
-  peers = async (): Promise<string[]> => {
+  peers = async (): Promise<iPeer[]> => {
     const response: RequestResponseData = await this.callMethod("info.peers");
     return response.data.result.peers;
   } 
