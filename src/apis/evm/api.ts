@@ -505,9 +505,9 @@ export class EVMAPI extends JRPCAPI {
    */
   buildImportTx = async (
     utxoset: UTXOSet, 
+    toAddress: string,
     ownerAddresses: string[],
     sourceChain: Buffer | string,
-    toAddress: string,
     fromAddresses: string[]
   ): Promise<UnsignedTx> => {
     const from: Buffer[] = this._cleanAddressArray(fromAddresses, "buildImportTx").map((a) => bintools.stringToAddress(a));
