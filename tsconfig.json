@@ -23,6 +23,7 @@
     ]
   },
   "exclude": [
+    "examples",
     "node_modules",
     "typings"
   ],
